@@ -1,10 +1,14 @@
-# Builds the APK on GitHub's machines: open Actions → "Build APK" → the latest run → Artifacts → cricket07-apk.
+# Builds the APK on GitHub's machines and publishes it on the Releases page.
+# Direct download of the newest build: https://github.com/Dattaharshithreddy/eacricket07/releases/latest/download/Cricket07.apk
 # ubuntu-24.04 runners ship with the Android SDK preinstalled (ANDROID_HOME), so no SDK setup step is needed.
 name: Build APK
 
 on:
   push:
   workflow_dispatch:
+
+permissions:
+  contents: write   # to create the release
 
 jobs:
   build:
@@ -25,7 +29,21 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk Cricket07.apk
       - uses: actions/upload-artifact@v4
         with:
           name: cricket07-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          path: Cricket07.apk
+      # Every build of main becomes a release; "latest" always points at the newest one.
+      - name: Publish release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Cricket 07 for Android · build ${{ github.run_number }}
+          make_latest: true
+          files: Cricket07.apk
+          body: |
+            Bring-your-own-copy Android app for Cricket 07, with touch controls.
+            Contains no game files: you need your own browser build and game folder (see the README).
+            Commit: ${{ github.sha }}
