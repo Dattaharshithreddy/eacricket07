@@ -91,6 +91,19 @@ class MainActivity : Activity() {
         setContentView(ScrollView(this).apply { setBackgroundColor(Color.parseColor("#070B08")); addView(col) })
     }
 
+    /**
+     * Shows or hides the status and navigation bars. Only valid once the screen has content:
+     * asking before setContentView (when the window has no decor view yet) crashes on every Android version.
+     */
+    private fun systemBars(visible: Boolean) {
+        val c = window.decorView.windowInsetsController ?: return
+        if (visible) c.show(WindowInsets.Type.systemBars())
+        else {
+            c.hide(WindowInsets.Type.systemBars())
+            c.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
     // ------------------------------------------------------------------ setup screen
 
     private fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), resources.displayMetrics).toInt()
@@ -120,7 +133,6 @@ class MainActivity : Activity() {
     private fun showSetup() {
         webView?.let { it.destroy(); webView = null }
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        window.insetsController?.show(WindowInsets.Type.systemBars())
 
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -163,6 +175,7 @@ class MainActivity : Activity() {
             setBackgroundColor(Color.parseColor("#070B08"))
             addView(col)
         })
+        systemBars(visible = true)
     }
 
     private fun refreshSetup() {
@@ -242,10 +255,6 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun showGame() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        window.insetsController?.let {
-            it.hide(WindowInsets.Type.systemBars())
-            it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
         val wv = WebView(this).apply {
             setBackgroundColor(Color.BLACK)
             overScrollMode = View.OVER_SCROLL_NEVER
@@ -281,6 +290,7 @@ class MainActivity : Activity() {
         }
         webView = wv
         setContentView(wv, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        systemBars(visible = false)
         wv.loadUrl(LocalServer.url(this) + "?android=1")
     }
 

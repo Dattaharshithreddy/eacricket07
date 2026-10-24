@@ -12,8 +12,8 @@ android {
         // WebGPU on Android needs Android 12+ (and a recent Chrome / WebView)
         minSdk = 31
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.1.2"
     }
 
     buildTypes {
