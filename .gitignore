@@ -1,0 +1,12 @@
+.gradle/
+build/
+app/build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+# never commit game files or a build made from them
+c07-build/
+*.wasm

@@ -1,0 +1,89 @@
+/* Phone layout: the stage fills the screen (the game letterboxes its own 4:3 picture), and the desktop
+   extras (fullscreen button and tip, keyboard cheat sheet, credit line) are hidden. */
+body.c07-android { overflow: hidden; background: #000; overscroll-behavior: none; }
+body.c07-android main { padding: 0; }
+body.c07-android #stage {
+  position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; aspect-ratio: auto;
+  border-radius: 0; box-shadow: none;
+}
+body.c07-android #fs, body.c07-android #fstip, body.c07-android #kbd, body.c07-android #kbd-show,
+body.c07-android .credit { display: none !important; }
+body.c07-android #panel { padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left)); }
+
+/* ------------------------------------------------------------ touch controls */
+
+#c07-touch {
+  --c07-scale: 1;
+  --u: calc(64px * var(--c07-scale));
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  font: 700 15px/1 ui-sans-serif, system-ui, Roboto, sans-serif; color: #fff;
+}
+#c07-touch.c07-off { display: none; }
+#c07-touch button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
+
+.c07-stickzone, .c07-pad, .c07-shoulders, .c07-top, .c07-menu { pointer-events: auto; }
+
+/* left half: touch anywhere and the stick appears under the thumb */
+.c07-stickzone { position: absolute; left: 0; top: 18%; bottom: 0; width: 42%; touch-action: none; }
+.c07-base {
+  position: absolute; left: calc(env(safe-area-inset-left) + var(--u) * 1.6); top: calc(100% - var(--u) * 1.75);
+  width: calc(var(--u) * 2.1); height: calc(var(--u) * 2.1); transform: translate(-50%, -50%);
+  border-radius: 50%; background: rgba(255, 255, 255, .08); border: 2px solid rgba(255, 255, 255, .22);
+  opacity: .55; transition: opacity .15s ease;
+}
+.c07-base.c07-active { opacity: .9; }
+.c07-knob {
+  position: absolute; left: 50%; top: 50%; width: 44%; height: 44%; transform: translate(-50%, -50%);
+  border-radius: 50%; background: rgba(255, 255, 255, .35); border: 2px solid rgba(255, 255, 255, .55);
+}
+
+/* right thumb: four face buttons in a diamond */
+.c07-pad {
+  position: absolute; right: calc(env(safe-area-inset-right) + var(--u) * .35); bottom: calc(var(--u) * .3);
+  width: calc(var(--u) * 3); height: calc(var(--u) * 3);
+}
+.c07-btn {
+  position: absolute; width: var(--u); height: var(--u); padding: 0; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .4); background: rgba(0, 0, 0, .32);
+  font-size: calc(var(--u) * .42); display: grid; place-items: center; touch-action: none;
+  opacity: .7; transition: transform .06s ease, background .06s ease;
+}
+.c07-btn.c07-down { transform: scale(.9); background: rgba(255, 255, 255, .3); opacity: 1; }
+.c07-tri { left: calc(var(--u) * 1); top: 0; color: #7ee0a8; }
+.c07-sq  { left: 0; top: calc(var(--u) * 1); color: #f2a6d8; }
+.c07-ci  { left: calc(var(--u) * 2); top: calc(var(--u) * 1); color: #ff8a80; }
+.c07-x   { left: calc(var(--u) * 1); top: calc(var(--u) * 2); color: #9cc7ff; width: calc(var(--u) * 1.1); height: calc(var(--u) * 1.1); }
+
+.c07-shoulders {
+  position: absolute; right: calc(env(safe-area-inset-right) + var(--u) * 3.6); bottom: calc(var(--u) * .45);
+  display: flex; flex-direction: column; gap: calc(var(--u) * .2);
+}
+.c07-btn.c07-wide {
+  position: static; width: calc(var(--u) * 1.25); height: calc(var(--u) * .72); border-radius: calc(var(--u) * .22);
+  font-size: calc(var(--u) * .24); letter-spacing: .06em;
+}
+
+.c07-top {
+  position: absolute; top: max(10px, env(safe-area-inset-top)); right: calc(env(safe-area-inset-right) + 12px);
+  display: flex; gap: 10px;
+}
+.c07-small, .c07-top .c07-btn {
+  position: static; width: 44px; height: 44px; border-radius: 12px; padding: 0; font-size: 15px;
+  border: 1px solid rgba(255, 255, 255, .3); background: rgba(0, 0, 0, .45); opacity: .75;
+}
+
+.c07-menu {
+  position: absolute; top: calc(max(10px, env(safe-area-inset-top)) + 54px); right: calc(env(safe-area-inset-right) + 12px);
+  display: flex; flex-direction: column; min-width: 220px; padding: 6px; border-radius: 14px;
+  background: rgba(10, 18, 12, .92); border: 1px solid rgba(255, 255, 255, .15);
+}
+.c07-menu button {
+  text-align: left; padding: 12px 14px; border: 0; border-radius: 10px; background: transparent;
+  font: 500 15px/1.2 ui-sans-serif, system-ui, Roboto, sans-serif;
+}
+.c07-menu button:active { background: rgba(255, 255, 255, .1); }
+.c07-hidden { display: none !important; }
+
+/* "hide touch controls": only the top bar stays, for players with a controller */
+#c07-touch.c07-minimal .c07-stickzone, #c07-touch.c07-minimal .c07-pad, #c07-touch.c07-minimal .c07-shoulders { display: none; }
