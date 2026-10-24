@@ -9,6 +9,7 @@
 
     <!-- the game is GPU-heavy; this asks for the large heap and keeps the display in landscape -->
     <application
+        android:name=".App"
         android:label="@string/app_name"
         android:icon="@drawable/ic_launcher"
         android:theme="@style/AppTheme"

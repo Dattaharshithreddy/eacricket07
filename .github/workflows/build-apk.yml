@@ -1,4 +1,4 @@
-# Builds the APK on GitHub's machines and publishes it on the Releases page.
+# Builds the APK, starts it on Android 12/14/15/16 emulators, and publishes it on the Releases page.
 # Direct download of the newest build: https://github.com/Dattaharshithreddy/eacricket07/releases/latest/download/Cricket07.apk
 # ubuntu-24.04 runners ship with the Android SDK preinstalled (ANDROID_HOME), so no SDK setup step is needed.
 name: Build APK
@@ -20,44 +20,55 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-      - name: Check Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools" | tail -20
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
       - name: Build
         run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace assembleRelease
           cp app/build/outputs/apk/release/app-release.apk Cricket07.apk
-      # Launch the APK on an emulator: a build that crashes on start never reaches Releases.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cricket07-apk
+          path: Cricket07.apk
+
+  # A build that crashes on start never reaches Releases. Results show as annotations on the run.
+  smoke:
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [31, 34, 35, 36]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: cricket07-apk
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Smoke test on an emulator
+      - name: Start the app on Android API ${{ matrix.api }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: ${{ matrix.api }}
           target: google_apis
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: sh ci/smoke.sh
-      - uses: actions/upload-artifact@v4
-        if: always()
+          script: sh ci/smoke.sh ${{ matrix.api }}
+
+  release:
+    needs: [build, smoke]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
         with:
           name: cricket07-apk
-          path: |
-            Cricket07.apk
-            screen.png
-            crash.txt
-            app.txt
       # Every build of main becomes a release; "latest" always points at the newest one.
-      - name: Publish release
-        if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Cricket 07 for Android · build ${{ github.run_number }}
@@ -66,4 +77,5 @@ jobs:
           body: |
             Bring-your-own-copy Android app for Cricket 07, with touch controls.
             Contains no game files: you need your own browser build and game folder (see the README).
+            Tested to start on Android 12, 14, 15 and 16 emulators.
             Commit: ${{ github.sha }}

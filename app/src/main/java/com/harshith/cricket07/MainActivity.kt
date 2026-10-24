@@ -50,6 +50,8 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val crash = App.crashFile(this)
+        if (crash.isFile) { showCrash(crash.readText()); crash.delete(); return }
         try {
             LocalServer.ensure(this)
         } catch (e: Exception) {
@@ -57,8 +59,36 @@ class MainActivity : Activity() {
             Log.e(TAG, "server failed to start", e)
             Toast.makeText(this, "Couldn't start the game server on port ${LocalServer.PORT}: ${e.message}", Toast.LENGTH_LONG).show()
         }
-        WebView.setWebContentsDebuggingEnabled(true)   // chrome://inspect from a computer, for troubleshooting
+        // touching WebView loads the phone's WebView package, which throws if it's missing, disabled or
+        // mid-update: that must not close the app before setup can even show
+        try {
+            WebView.setWebContentsDebuggingEnabled(true)   // chrome://inspect from a computer, for troubleshooting
+        } catch (e: Throwable) {
+            Log.e(TAG, "WebView unavailable", e)
+        }
         if (GameStore.ready(this)) showGame() else showSetup()
+    }
+
+    /** Shown on the start after a crash: the report, a Copy button, and a way back into the app. */
+    private fun showCrash(report: String) {
+        val col = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(24), dp(24), dp(24))
+            setBackgroundColor(Color.parseColor("#070B08"))
+        }
+        col.addView(text("The app closed last time", 22f, Color.WHITE, bold = true))
+        col.addView(text("Tap Copy and paste this report to whoever is fixing the app.", 15f, Color.parseColor("#9FB3A5")))
+        col.addView(button("Copy report", true) {
+            val cm = getSystemService(android.content.ClipboardManager::class.java)
+            cm.setPrimaryClip(android.content.ClipData.newPlainText("Cricket 07 crash", report))
+            Toast.makeText(this, "Copied", Toast.LENGTH_SHORT).show()
+        })
+        col.addView(button("Continue", false) { recreate() })
+        col.addView(text(report, 12f, Color.parseColor("#EEF4EF")).apply {
+            typeface = Typeface.MONOSPACE
+            setTextIsSelectable(true)
+        })
+        setContentView(ScrollView(this).apply { setBackgroundColor(Color.parseColor("#070B08")); addView(col) })
     }
 
     // ------------------------------------------------------------------ setup screen
